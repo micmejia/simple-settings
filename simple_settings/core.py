@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import logging
 import os
 import sys
 from copy import deepcopy
@@ -6,6 +7,8 @@ from copy import deepcopy
 from .dynamic_settings import get_dynamic_reader
 from .special_settings import process_special_settings
 from .strategies import strategies
+
+logger = logging.getLogger(__name__)
 
 
 class LazySettings(object):
@@ -71,8 +74,16 @@ class LazySettings(object):
     def _load_settings_pipeline(self):
         for settings_file in self._settings_list:
             strategy = self._get_strategy_by_file(settings_file)
-            settings = strategy.load_settings_file(settings_file)
-            self._dict.update(settings)
+            try:
+                settings = strategy.load_settings_file(settings_file)
+            except Exception as e:
+                logger.exception(
+                    'Error processing settings_file "{}":\n {}'.format(
+                        settings_file, e
+                    ))
+                raise
+            else:
+                self._dict.update(settings)
 
     def _get_strategy_by_file(self, settings_file):
         for strategy in self.strategies:
@@ -82,18 +93,15 @@ class LazySettings(object):
 
     def __getattr__(self, attr):
         self.setup()
-        try:
-            result = self._dict[attr]
-        except KeyError:
-            raise AttributeError('You did not set {} setting'.format(attr))
-
         if self._dynamic_reader:
             dynamic_result = self._dynamic_reader.get(attr)
             if dynamic_result is not None:
                 self._dict[attr] = dynamic_result
-                result = dynamic_result
-
-        return result
+                return dynamic_result
+        try:
+            return self._dict[attr]
+        except KeyError:
+            raise AttributeError('You did not set {} setting'.format(attr))
 
     def add_strategy(self, strategy):
         self.strategies += (strategy,)
