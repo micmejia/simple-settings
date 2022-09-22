@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import logging
 import os
 import sys
@@ -11,7 +10,7 @@ from .strategies import strategies
 logger = logging.getLogger(__name__)
 
 
-class LazySettings(object):
+class LazySettings:
     """
     LazySettings is the main class of simple-settings
 
@@ -83,7 +82,7 @@ class LazySettings(object):
                     ))
                 raise
             else:
-                self._dict.update(settings)
+                self._dict.update(settings or {})
 
     def _get_strategy_by_file(self, settings_file):
         for strategy in self.strategies:

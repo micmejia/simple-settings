@@ -1,8 +1,7 @@
-# -*- coding: utf-8 -*-
 from collections import OrderedDict
+from unittest.mock import MagicMock, call, patch
 
 import pytest
-from mock import MagicMock, call, patch
 
 from simple_settings.special_settings import (
     configure_logging,
@@ -14,7 +13,7 @@ from simple_settings.special_settings import (
 )
 
 
-class TestSpecialSettings(object):
+class TestSpecialSettings:
     @pytest.fixture
     def settings_dict_to_override(self):
         return {
@@ -92,6 +91,9 @@ class TestSpecialSettings(object):
                     'JSON_LOADS_PARSED_1': 'json.loads',
                     'JSON_LOADS_PARSED_2': 'json.loads',
                     'JSON_LOADS_PARSED_3': 'json.loads',
+                    'JSON_LOADS_PARSED_4': 'json.loads',
+                    'JSON_LOADS_PARSED_5': 'json.loads',
+                    'JSON_LOADS_PARSED_6': 'json.loads',
                 }
             },
             'STRING_NONE': None,
@@ -111,6 +113,9 @@ class TestSpecialSettings(object):
             'JSON_LOADS_PARSED_1': '{"simple": "value"}',
             'JSON_LOADS_PARSED_2': 'true',
             'JSON_LOADS_PARSED_3': '1',
+            'JSON_LOADS_PARSED_4': [1, 3],
+            'JSON_LOADS_PARSED_5': '[1, 3]',
+            'JSON_LOADS_PARSED_6': {"simple": "value"},
         }
 
     @pytest.fixture
@@ -179,8 +184,8 @@ class TestSpecialSettings(object):
         with pytest.raises(ValueError) as exc:
             required_settings(settings_dict_required)
 
-        assert 'LOST_SETTING' in str(exc)
-        assert 'SIMPLE_STRING' not in str(exc)
+        assert 'LOST_SETTING' in str(exc.value)
+        assert 'SIMPLE_STRING' not in str(exc.value)
 
     def test_required_not_none_settings_should_raise_value_error_for_a_none_setting(
         self, settings_dict_required_not_none
@@ -188,8 +193,8 @@ class TestSpecialSettings(object):
         with pytest.raises(ValueError) as exc:
             required_not_none_settings(settings_dict_required_not_none)
 
-        assert 'SIMPLE_STRING' in str(exc)
-        assert 'SIMPLE_INTEGER' not in str(exc)
+        assert 'SIMPLE_STRING' in str(exc.value)
+        assert 'SIMPLE_INTEGER' not in str(exc.value)
 
     def test_required_settings_types_should_raise_value_error_for_an_unsupported_type(
         self, settings_dict_required_types_unsupported_type
@@ -199,8 +204,8 @@ class TestSpecialSettings(object):
                 settings_dict_required_types_unsupported_type
             )
 
-        assert 'UNSUPPORTED_TYPE' in str(exc)
-        assert 'SIMPLE_INTEGER' not in str(exc)
+        assert 'UNSUPPORTED_TYPE' in str(exc.value)
+        assert 'SIMPLE_INTEGER' not in str(exc.value)
 
     def test_required_settings_types_should_raise_value_error_for_invalid_types(
         self, settings_dict_required_types_invalid_types
@@ -208,8 +213,8 @@ class TestSpecialSettings(object):
         with pytest.raises(ValueError) as exc:
             required_settings_types(settings_dict_required_types_invalid_types)
 
-        assert 'SIMPLE_INTEGER' in str(exc)
-        assert 'SIMPLE_BOOL' in str(exc)
+        assert 'SIMPLE_INTEGER' in str(exc.value)
+        assert 'SIMPLE_BOOL' in str(exc.value)
 
     def test_required_settings_types_should_not_raise_value_error_for_valid_types(
         self, settings_dict_required_types_valid_types
@@ -239,8 +244,11 @@ class TestSpecialSettings(object):
         assert isinstance(converted_value('JSON_LOADS_PARSED_3'), int)
 
         assert converted_value('JSON_LOADS_PARSED_1') == {'simple': 'value'}
-        assert converted_value('JSON_LOADS_PARSED_2') == True
+        assert converted_value('JSON_LOADS_PARSED_2') is True
         assert converted_value('JSON_LOADS_PARSED_3') == 1
+        assert converted_value('JSON_LOADS_PARSED_4') == [1, 3]
+        assert converted_value('JSON_LOADS_PARSED_5') == [1, 3]
+        assert converted_value('JSON_LOADS_PARSED_6') == {'simple': 'value'}
 
     def test_override_by_env_and_required_loads_in_correct_order(
         self, settings_dict_override_and_required

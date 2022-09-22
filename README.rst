@@ -6,12 +6,8 @@ Python Simple Settings
     :target: https://badge.fury.io/py/simple-settings
     :alt: Package version
 
-.. image:: https://api.codacy.com/project/badge/Grade/d5d1a3dece0e48478de9797563b49310
-    :target: https://www.codacy.com/app/drgarcia1986/simple-settings?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=drgarcia1986/simple-settings&amp;utm_campaign=Badge_Grade
-    :alt: Code Issues
-
-.. image:: https://travis-ci.org/drgarcia1986/simple-settings.svg
-    :target: https://travis-ci.org/drgarcia1986/simple-settings
+.. image:: https://github.com/drgarcia1986/simple-settings/actions/workflows/main.yml/badge.svg
+    :target: https://github.com/drgarcia1986/simple-settings
     :alt: Build Status
 
 .. image:: https://coveralls.io/repos/drgarcia1986/simple-settings/badge.svg
@@ -267,9 +263,6 @@ a ``SIMPLE_SETTINGS`` dict in the settings module.
         }
     }
 
-*Note: special settings may only be specified in python settings files
-(not ini, yaml, etc.).*
-
 Configure logging
 ~~~~~~~~~~~~~~~~~
 
@@ -386,7 +379,7 @@ types.
     - ``"int"`` - python's native integer type, parsed from a string using ``int(value)``
     - ``"float"`` - python's native float type, parsed from a string using ``float(value)``
     - ``"str"`` - python's native string type, not parsed from a string
-    - ``"json.loads"`` - Can be some types resulted of python's ``json.loads(value)`` function (e.g. dict: '{"foo": "bar"} -> {'foo': 'bar'}, int: '1' -> 1, bool: 'true' -> True, etc.)
+    - ``"json.loads"`` - Can be some types resulted of python's ``json.loads(value)`` function (e.g. dict: '{"foo": "bar"} -> {'foo': 'bar'}, int: '1' -> 1, bool: 'true' -> True, list: '[1, 2]' -> [1, 2], etc.)
 
 Dynamic Settings
 ~~~~~~~~~~~~~~~~
@@ -445,8 +438,8 @@ In redis dynamic reader the binary types is automatically decoded.
     To install with redis dependencies use:
     ``pip install simple-settings[redis]``
 
-Consul
-^^^^^^
+Consul - Deprecated
+^^^^^^^^^^^^^^^^^^^
 
 You can read your settings dynamically from a consul server if you
 activate the ``DYNAMIC_SETTINGS`` special setting with the ``consul``
@@ -592,7 +585,7 @@ To implement a custom strategy:
 
     from simple_settings import settings
 
-    class SettingsCustomStrategy(object):
+    class SettingsCustomStrategy:
         """
         See `/simple_settings/strategies` for sample strategies (e.g. python, json, cfg)
         """
@@ -600,13 +593,88 @@ To implement a custom strategy:
     settings.add_strategy(SettingsCustomStrategy)
 
 
+Custom Dynamic Settings Reader
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can easily create your own dynamic settings reader. To do that you need to
+create a class than inherit from ``simple_settings.dynamic_settings.base.BaseReader``
+and implement ``_get`` and ``_set`` methods, f.ex:
+
+.. code:: python
+
+   from simple_settings.dynamic_settings.base import BaseReader
+
+
+   class Reader(BaseReader):
+
+       def __init__(self, conf):
+           super(Reader, self).__init__(conf)
+           self._dict = {}
+
+       def _get(self, key):
+           return self._dict.get(key)
+
+       def _set(self, key, value):
+           self._dict[key] = value
+
+..
+
+To use it, just configure ``SIMPLE_SETINGS`` special setting with the full path
+of the reader, f.ex:
+
+.. code:: python
+
+   'SIMPLE_SETTINGS': {
+       'DYNAMIC_SETTINGS': {
+         'backend': 'path.of.module.ClassName'
+       }
+   }
+..
+
+Any other config of dynamic settings will be pass to reader backend on argument ``conf``
+
+
 Changelog
 ---------
+[1.2.0] - 2021-12-30
+~~~~~~~~~~~~~~~~~~~~
+
+- Update dependencies
+- Deprecated Consul Dynamic Settings Reader
+- Implement `strtobool` function (and remove distutils dependency)
+
+
+[1.1.0] - 2021-10-26
+~~~~~~~~~~~~~~~~~~~~
+
+- Fix ``TypeError`` when load an empty config file.
+- Update dependencies.
+- Add log on Python Load Strategy to logging when an exception raises on import process.
+
+[1.0.0] - 2020-09-29
+~~~~~~~~~~~~~~~~~~~~
+
+- Drop support to python < 3.6.
+- Update dependencies.
+
+
+[0.19.1] - 2019-10-21
+~~~~~~~~~~~~~~~~~~~~~
+
+- Load dynamic settings reader with both ways, full class path and module path
+  (assuming the reader class is called ``Reader``)
+
+[0.19.0] - 2019-10-18
+~~~~~~~~~~~~~~~~~~~~~
+
+- Change import dynamic reader mechanism to using full class path with dot notation
+- Update several dependencies
+- ``json.loads`` of ``REQUIRED_SETTINGS_TYPES`` now converts and validate lists
 
 [0.18.0] - 2019-07-14
 ~~~~~~~~~~~~~~~~~~~~~
 
-- Fix ``TypeError`` on ``jsonpickle.decode`` when `auto_casting` is True and
+- Fix ``TypeError`` on ``jsonpickle.decode`` when ``auto_casting`` is True and
   dynamic backend returns None.
 - Raise exception containing ``settings_file`` information when an error occurs
   in ``strategy.load_settings_file`` call from ``_load_settings_pipeline``.

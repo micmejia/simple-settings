@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
 import importlib
 import inspect
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-class SettingsLoadStrategyPython(object):
+class SettingsLoadStrategyPython:
     """
     This is the strategy used to read settings from python modules.
 
@@ -17,6 +19,9 @@ class SettingsLoadStrategyPython(object):
             importlib.import_module(file_name)
             return True
         except (ImportError, TypeError):
+            logger.info(
+                'Cannot load {} as python settings file'.format(file_name)
+            )
             return False
 
     @staticmethod

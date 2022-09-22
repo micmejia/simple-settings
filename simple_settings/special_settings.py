@@ -1,11 +1,10 @@
-# -*- coding: utf-8 -*-
 import json
 import logging.config
 import os
 from collections import OrderedDict
-from distutils.util import strtobool
 
 from .constants import SPECIAL_SETTINGS_KEY
+from .strtobool import strtobool
 
 
 def required_settings(settings_dict):
@@ -44,7 +43,7 @@ SETTINGS_TYPES = {
     'float': (float, float),
     'int': (int, int),
     'str': (str, str),
-    'json.loads': (dict, json.loads)
+    'json.loads': ((dict, list), json.loads)
 }
 
 
